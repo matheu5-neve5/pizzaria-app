@@ -1,14 +1,15 @@
 // Serviço autenticação de login
 
-import express from 'express';
-import bodyParser from 'body-parser';
-import cors from 'cors';
-import usersRouter from './users.js';
+const express = require('express');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const usersRouter = require('./users.js');
 
 const app = express();
 const port = 3001;
 
 app.use(cors());
+app.use(express.json());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/users', usersRouter);

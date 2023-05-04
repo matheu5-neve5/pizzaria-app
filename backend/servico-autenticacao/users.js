@@ -1,15 +1,16 @@
-import express from 'express';
-import bcrypt from 'bcrypt';
-import passport from 'passport';
-import pool from './database.js';
-import { check, validationResult } from 'express-validator';
-import jwt from 'jsonwebtoken';
-import { sendConfirmationEmail } from './emailService.js';
+const express = require('express');
+const bcrypt = require('bcrypt');
+const passport = require('passport');
+const pool = require('./database.js');
+const { check, validationResult } = require('express-validator');
+const jwt = require('jsonwebtoken');
+const { sendConfirmationEmail } = require('./emailService.js');
+require('dotenv').config();
 
 // Criar um router do Express
 const router = express.Router();
 
-// Definir endpoint POST para registrar um novo usuário
+// Definir endpoint POST para registrar um novo usuário+
 router.post(
   '/register',
   [
@@ -48,9 +49,12 @@ router.post(
 
       // Inserir o novo usuário no banco de dados
       const { rows } = await pool.query(
-        'INSER INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *',
+        'INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *',
         [name, email, hashedPassword]
       );
+
+      // Retornar o novo usuário criado
+      const newUser = rows[0];
 
       // Gere o token de confirmação
       const confirmationToken = jwt.sign(
@@ -58,6 +62,7 @@ router.post(
         process.env.JWT_CONFIRMATION_SECRET,
         { expiresIn: '1d' }
       );
+      console.log(confirmationToken);
 
       // Armazene o token de confirmação no banco de dados
       await pool.query(
@@ -68,8 +73,6 @@ router.post(
       // Envie o e-mail de confirmação
       await sendConfirmationEmail(newUser.email, confirmationToken);
 
-      // Retornar o novo usuário criado
-      const newUser = rows[0];
       return res.status(201).json({ user: newUser });
     } catch (error) {
       // Tratar erros do servidor
@@ -78,6 +81,35 @@ router.post(
     }
   }
 );
+
+// Definir endpoint GET para confirmar e-mail
+router.get('/confirm-email', async (req, res) => {
+  // Extrair o toklen da confirmação da query string
+  const { token } = req.query;
+
+  try {
+    // Decodificar o token de confirmação
+    const decoded = jwt.verify(token, process.env.JWT_CONFIRMATION_SECRET);
+
+    // Atualizar a flag de confirmação de e-mail no banco de dados
+    const { rowCount } = await pool.query(
+      'UPDATE users SET email_confirmed = TRUE WHERE id = $1',
+      [decoded.userId]
+    );
+
+    if (rowCount !== 1) {
+      throw new Error('Erro ao atualizar a confirmação de email');
+    }
+
+    // Retornar uma mensagem de sucesso
+    return res.status(200).json({ message: 'E-mail confirmado com sucesso!' });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(400)
+      .json({ error: 'Link de confirmação inválido ou expirado' });
+  }
+});
 
 // Definindo a rota POST para '/login'
 router.post('/login', (req, res, next) => {
@@ -110,4 +142,4 @@ router.post('/login', (req, res, next) => {
 });
 
 // Exportando nosso router
-export default router;
+module.exports = router;

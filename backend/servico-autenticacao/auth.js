@@ -9,7 +9,7 @@ import pool from './database.js';
 // Configuração das opções do JWT
 const jwtOptions = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-  secretOrKey: 'your_jwt_secret',
+  secretOrKey: process.env.JWT_SECRET,
 };
 
 // Configurando a estratégia local do Passport para autenticação com email e senha
@@ -19,9 +19,10 @@ passport.use(
     async (email, password, done) => {
       try {
         // Consulta o banco de dados para encontrar um usuário com o email fornecido
-        const { rows } = await pool.query('SELECT * FROM users WHERE id = $1', [
-          payload.sub,
-        ]);
+        const { rows } = await pool.query(
+          'SELECT * FROM users WHERE email = $1',
+          [email]
+        );
         const user = rows[0];
 
         // Caso não encontre o usuário, retorna a mensagem de erro
@@ -30,7 +31,7 @@ passport.use(
         }
 
         // Compara a senha fornecida com a senha armazenada no banco de dados
-        const isPasswordValid = await bcrypto.compare(password, user.password);
+        const isPasswordValid = await bcrypt.compare(password, user.password);
 
         // Se a senha for inválida, retorna a mensagem de erro
         if (!isPasswordValid) {

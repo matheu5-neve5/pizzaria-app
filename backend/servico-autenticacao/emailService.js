@@ -1,17 +1,18 @@
-import nodemailer from 'nodemailer';
+const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 587,
   secure: false,
   auth: {
-    user: 'matheus.almn@gmail.com',
-    pass: '8352850!Aff',
+    user: 'contact@dynastygi.com',
+    pass: 'DN/s~Gc!";.2m~[.',
   },
 });
 
 const sendConfirmationEmail = async (to, token) => {
-  const confirmationLink = 'http://localhost:3000/confirm/${token}';
+  console.log('Token recebido na função sendConfirmationEmail: ', token); // adicionado para verificar o valor da variável token
+  const confirmationLink = `http://localhost:3000/confirm/${token}`;
 
   const mailOptions = {
     from: 'your_email',
@@ -28,4 +29,6 @@ const sendConfirmationEmail = async (to, token) => {
   }
 };
 
-export { sendConfirmationEmail };
+module.exports = {
+  sendConfirmationEmail,
+};
