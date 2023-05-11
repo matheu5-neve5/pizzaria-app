@@ -82,19 +82,28 @@ router.post(
   }
 );
 
-// Definir endpoint GET para confirmar e-mail
 router.get('/confirm-email', async (req, res) => {
-  // Extrair o toklen da confirmação da query string
   const { token } = req.query;
 
   try {
-    // Decodificar o token de confirmação
-    const decoded = jwt.verify(token, process.env.JWT_CONFIRMATION_SECRET);
+    // Buscar o userId correspondente ao token na tabela confirmation_tokens
+    const { rows: userRows } = await pool.query(
+      'SELECT user_id FROM confirmation_tokens WHERE token = $1',
+      [token]
+    );
+
+    if (userRows.length === 0) {
+      return res
+        .status(400)
+        .json({ error: 'Token de confirmação inválido ou expirado' });
+    }
+
+    const userId = userRows[0].user_id;
 
     // Atualizar a flag de confirmação de e-mail no banco de dados
     const { rowCount } = await pool.query(
-      'UPDATE users SET email_confirmed = TRUE WHERE id = $1',
-      [decoded.userId]
+      'UPDATE users SET confirmed = TRUE WHERE id = $1',
+      [userId]
     );
 
     if (rowCount !== 1) {
@@ -105,9 +114,7 @@ router.get('/confirm-email', async (req, res) => {
     return res.status(200).json({ message: 'E-mail confirmado com sucesso!' });
   } catch (error) {
     console.error(error);
-    return res
-      .status(400)
-      .json({ error: 'Link de confirmação inválido ou expirado' });
+    return res.status(400).json({ error: 'Erro ao confirmar e-mail' });
   }
 });
 

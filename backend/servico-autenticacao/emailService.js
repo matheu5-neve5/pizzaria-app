@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
 
 const sendConfirmationEmail = async (to, token) => {
   console.log('Token recebido na função sendConfirmationEmail: ', token); // adicionado para verificar o valor da variável token
-  const confirmationLink = `http://localhost:3000/confirm/${token}`;
+  const confirmationLink = `http://localhost:3001/users/confirm-email?token=${token}`;
 
   const mailOptions = {
     from: 'your_email',
