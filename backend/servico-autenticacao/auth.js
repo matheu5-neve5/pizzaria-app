@@ -1,10 +1,12 @@
 // Autenticação
 
-import passport from 'passport';
-import { Strategy as LocalStrategy } from 'passport-local';
-import { Strategy as JWTStrategy, ExtractJwt } from 'passport-jwt';
-import bcrypt from 'bcrypt';
-import pool from './database.js';
+require('dotenv').config();
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+const JWTStrategy = require('passport-jwt').Strategy;
+const ExtractJwt = require('passport-jwt').ExtractJwt;
+const bcrypt = require('bcrypt');
+const pool = require('./database.js');
 
 // Configuração das opções do JWT
 const jwtOptions = {
@@ -72,4 +74,4 @@ passport.use(
   })
 );
 
-export default passport;
+module.exports = { passport };

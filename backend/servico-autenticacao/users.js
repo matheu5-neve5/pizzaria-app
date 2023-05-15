@@ -1,10 +1,11 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
-const passport = require('passport');
 const pool = require('./database.js');
 const { check, validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
 const { sendConfirmationEmail } = require('./emailService.js');
+const { passport } = require('./auth');
+
 require('dotenv').config();
 
 // Criar um router do Express
@@ -131,20 +132,13 @@ router.post('/login', (req, res, next) => {
       return res.status(400).json({ error: info.message });
     }
 
-    // Se o usuário for autenticado com sucesso, inicia a sessão
-    req.login(user, async (err) => {
-      // Se houver um erro ao iniciar a sessão, retorne o erro
-      if (err) {
-        return next(err);
-      }
-
-      // Cria um token JWT com o ID do usuário como payload e expira em 1 hora
-      const token = jwt.sign({ sub: user.id }, 'your_jwt_secret', {
-        expiresIn: '1h',
-      });
-      // Retorna o token JWT na resposta
-      return res.status(200).json({ token });
+    // Cria um token JWT com o ID do usuário como payload e expira em 1 hora
+    const token = jwt.sign({ sub: user.id }, process.env.JWT_SECRET, {
+      expiresIn: '1h',
     });
+
+    // Retorna o token JWT na resposta
+    return res.status(200).json({ token });
   })(req, res, next);
 });
 
